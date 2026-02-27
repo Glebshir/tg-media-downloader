@@ -61,7 +61,13 @@ async def handle_youtube_link(message: Message, state: FSMContext):
 
     except Exception as e:
         logger.error(f"YouTube error: {e}")
-        await message.answer("❌ Ошибка при получении информации о видео")
+        if "Sign in to confirm" in str(e):
+            await message.answer(
+                "❌ YouTube требует подтверждение сессии. Добавьте cookies.txt "
+                "и переменную YTDLP_COOKIEFILE."
+            )
+        else:
+            await message.answer("❌ Ошибка при получении информации о видео")
 
 
 @router.callback_query(F.data.startswith("yt_"))

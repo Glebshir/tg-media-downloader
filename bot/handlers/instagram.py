@@ -32,6 +32,16 @@ async def handle_instagram_link(message: Message):
         if not result:
             await message.answer("❌ Не удалось скачать контент")
             return
+        if result.get("error"):
+            error_text = result.get("error", "").lower()
+            if "login required" in error_text or "rate-limit" in error_text:
+                await message.answer(
+                    "❌ Instagram требует авторизацию. Добавьте cookies.txt "
+                    "или INSTAGRAM_USERNAME/INSTAGRAM_PASSWORD."
+                )
+            else:
+                await message.answer("❌ Ошибка при скачивании из Instagram")
+            return
 
         files = result.get("files", [])
         if not files:

@@ -1,9 +1,10 @@
 import asyncio
 import logging
+import os
 from typing import List, Dict, Optional
 
 import yt_dlp
-from bot.config import DOWNLOADS_DIR
+from bot.config import DOWNLOADS_DIR, YTDLP_COOKIEFILE
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,8 @@ BASE_YDL_OPTS = {
     "source_address": "0.0.0.0",
     "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
 }
+if YTDLP_COOKIEFILE and os.path.isfile(YTDLP_COOKIEFILE):
+    BASE_YDL_OPTS["cookiefile"] = YTDLP_COOKIEFILE
 
 
 async def get_formats(url: str) -> List[Dict]:

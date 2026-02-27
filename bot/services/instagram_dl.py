@@ -2,9 +2,15 @@ import asyncio
 import logging
 from typing import Dict, List, Optional
 from pathlib import Path
+import os
 
 import yt_dlp
-from bot.config import DOWNLOADS_DIR
+from bot.config import (
+    DOWNLOADS_DIR,
+    YTDLP_COOKIEFILE,
+    INSTAGRAM_USERNAME,
+    INSTAGRAM_PASSWORD,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +23,11 @@ async def download_instagram_media(url: str) -> Optional[Dict]:
         "format": "best",
         "source_address": "0.0.0.0",
     }
+    if YTDLP_COOKIEFILE and os.path.isfile(YTDLP_COOKIEFILE):
+        ydl_opts["cookiefile"] = YTDLP_COOKIEFILE
+    if INSTAGRAM_USERNAME and INSTAGRAM_PASSWORD:
+        ydl_opts["username"] = INSTAGRAM_USERNAME
+        ydl_opts["password"] = INSTAGRAM_PASSWORD
 
     loop = asyncio.get_event_loop()
 
@@ -44,4 +55,4 @@ async def download_instagram_media(url: str) -> Optional[Dict]:
 
     except Exception as e:
         logger.error(f"Instagram download error: {e}")
-        return None
+        return {"error": str(e), "files": []}

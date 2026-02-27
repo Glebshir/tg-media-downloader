@@ -8,6 +8,9 @@ services:
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-52428800}
+      - YTDLP_COOKIEFILE=${YTDLP_COOKIEFILE:-/app/downloads/cookies.txt}
+      - INSTAGRAM_USERNAME=${INSTAGRAM_USERNAME:-}
+      - INSTAGRAM_PASSWORD=${INSTAGRAM_PASSWORD:-}
       - HTTP_PROXY=${HTTP_PROXY:-http://127.0.0.1:1081}
       - HTTPS_PROXY=${HTTPS_PROXY:-http://127.0.0.1:1081}
       - http_proxy=${http_proxy:-http://127.0.0.1:1081}
