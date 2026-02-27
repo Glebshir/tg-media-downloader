@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  bot:
+    image: ghcr.io/glebshir/tg-media-downloader:latest
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-52428800}
+    volumes:
+      - ./downloads:/app/downloads
