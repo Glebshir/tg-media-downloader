@@ -11,11 +11,11 @@ services:
       - YTDLP_COOKIEFILE=${YTDLP_COOKIEFILE:-/app/downloads/cookies.txt}
       - INSTAGRAM_USERNAME=${INSTAGRAM_USERNAME:-}
       - INSTAGRAM_PASSWORD=${INSTAGRAM_PASSWORD:-}
-      - HTTP_PROXY=${HTTP_PROXY:-http://127.0.0.1:1081}
-      - HTTPS_PROXY=${HTTPS_PROXY:-http://127.0.0.1:1081}
-      - http_proxy=${http_proxy:-http://127.0.0.1:1081}
-      - https_proxy=${https_proxy:-http://127.0.0.1:1081}
-      - ALL_PROXY=${ALL_PROXY:-http://127.0.0.1:1081}
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - http_proxy=${http_proxy:-}
+      - https_proxy=${https_proxy:-}
+      - ALL_PROXY=${ALL_PROXY:-}
       - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1}
     volumes:
       - ./downloads:/app/downloads
