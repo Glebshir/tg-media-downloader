@@ -15,6 +15,7 @@ async def download_instagram_media(url: str) -> Optional[Dict]:
         "quiet": True,
         "no_warnings": True,
         "format": "best",
+        "source_address": "0.0.0.0",
     }
 
     loop = asyncio.get_event_loop()

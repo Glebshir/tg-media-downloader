@@ -1,21 +1,56 @@
 import re
 import os
 import glob
-from typing import List
+from urllib.parse import urlparse
+from typing import Optional
 
 
-YOUTUBE_REGEX = (
-    r"(https?://)?(www\.)?(youtube\.com|youtu\.be)/(watch\?v=|embed/|v/|shorts/)?[\w-]+"
-)
-INSTAGRAM_REGEX = r"(https?://)?(www\.)?instagram\.com/(p/|reel/|stories/)?[\w-]+"
+URL_REGEX = r"(https?://[^\s]+|www\.[^\s]+)"
+YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
+INSTAGRAM_HOSTS = {"instagram.com", "www.instagram.com", "m.instagram.com"}
 
 
 def is_youtube_url(text: str) -> bool:
-    return bool(re.match(YOUTUBE_REGEX, text))
+    return extract_youtube_url(text) is not None
 
 
 def is_instagram_url(text: str) -> bool:
-    return bool(re.match(INSTAGRAM_REGEX, text))
+    return extract_instagram_url(text) is not None
+
+
+def _normalize_url(raw_url: str) -> str:
+    return raw_url if raw_url.startswith(("http://", "https://")) else f"https://{raw_url}"
+
+
+def _extract_first_url(text: str) -> Optional[str]:
+    if not text:
+        return None
+    match = re.search(URL_REGEX, text.strip())
+    if not match:
+        return None
+    return _normalize_url(match.group(1).rstrip(").,]}>\"'"))
+
+
+def extract_youtube_url(text: str) -> Optional[str]:
+    url = _extract_first_url(text)
+    if not url:
+        return None
+
+    host = urlparse(url).netloc.lower()
+    if host in YOUTUBE_HOSTS:
+        return url
+    return None
+
+
+def extract_instagram_url(text: str) -> Optional[str]:
+    url = _extract_first_url(text)
+    if not url:
+        return None
+
+    host = urlparse(url).netloc.lower()
+    if host in INSTAGRAM_HOSTS:
+        return url
+    return None
 
 
 def cleanup_files(*files):

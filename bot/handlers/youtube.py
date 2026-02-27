@@ -15,24 +15,22 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from bot.services.youtube_dl import get_formats, download_video
-from bot.utils.helpers import is_youtube_url, is_instagram_url, cleanup_files
+from bot.utils.helpers import extract_youtube_url, cleanup_files
 from bot.config import MAX_FILE_SIZE
 
 logger = logging.getLogger(__name__)
 router = Router()
 
-YOUTUBE_REGEX = (
-    r"(https?://)?(www\.)?(youtube\.com|youtu\.be)/(watch\?v=|embed/|v/|shorts/)?[\w-]+"
-)
-
-
 class YouTubeStates(StatesGroup):
     waiting_for_quality = State()
 
 
-@router.message(F.text.regexp(YOUTUBE_REGEX))
+@router.message(F.text.func(lambda text: bool(extract_youtube_url(text))))
 async def handle_youtube_link(message: Message, state: FSMContext):
-    url = message.text.strip()
+    url = extract_youtube_url(message.text or "")
+    if not url:
+        return
+
     await message.answer("🔍 Получаю информацию о видео...")
 
     try:

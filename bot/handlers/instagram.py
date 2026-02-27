@@ -12,18 +12,18 @@ from aiogram.types import (
 )
 
 from bot.services.instagram_dl import download_instagram_media
-from bot.utils.helpers import cleanup_files
+from bot.utils.helpers import extract_instagram_url, cleanup_files
 from bot.config import MAX_FILE_SIZE
 
 logger = logging.getLogger(__name__)
 router = Router()
 
-INSTAGRAM_REGEX = r"(https?://)?(www\.)?instagram\.com/(p/|reel/|stories/)?[\w-]+"
-
-
-@router.message(F.text.regexp(INSTAGRAM_REGEX))
+@router.message(F.text.func(lambda text: bool(extract_instagram_url(text))))
 async def handle_instagram_link(message: Message):
-    url = message.text.strip()
+    url = extract_instagram_url(message.text or "")
+    if not url:
+        return
+
     await message.answer("⏬ Скачиваю из Instagram...")
 
     try:

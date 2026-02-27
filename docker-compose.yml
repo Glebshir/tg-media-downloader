@@ -7,5 +7,8 @@ services:
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-52428800}
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     volumes:
       - ./downloads:/app/downloads

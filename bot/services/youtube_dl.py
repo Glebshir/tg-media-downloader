@@ -7,13 +7,16 @@ from bot.config import DOWNLOADS_DIR
 
 logger = logging.getLogger(__name__)
 
+BASE_YDL_OPTS = {
+    "quiet": True,
+    "no_warnings": True,
+    "source_address": "0.0.0.0",
+    "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
+}
+
 
 async def get_formats(url: str) -> List[Dict]:
-    ydl_opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "format": "best",
-    }
+    ydl_opts = {**BASE_YDL_OPTS, "format": "best"}
 
     loop = asyncio.get_event_loop()
 
@@ -65,15 +68,15 @@ async def download_video(
 ) -> Optional[str]:
     if format_id == "bestaudio":
         ydl_opts = {
+            **BASE_YDL_OPTS,
             "format": "bestaudio/best",
             "outtmpl": f"{DOWNLOADS_DIR}/%(title)s.%(ext)s",
-            "quiet": True,
         }
     else:
         ydl_opts = {
+            **BASE_YDL_OPTS,
             "format": f"{format_id}+bestaudio/best",
             "outtmpl": f"{DOWNLOADS_DIR}/%(title)s.%(ext)s",
-            "quiet": True,
         }
 
     loop = asyncio.get_event_loop()
