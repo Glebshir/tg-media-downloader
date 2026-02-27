@@ -39,3 +39,8 @@ htmlcov/
 *~
 
 *.log
+
+# Local-only project notes/checklists
+PROJECT_STATUS_*.md
+PROJECT_TEMPLATE_CHECKLIST.md
+COOLIFY_QUICKSTART.md
