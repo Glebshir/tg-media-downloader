@@ -4,10 +4,16 @@ from pathlib import Path
 
 import yt_dlp
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import (
+    Message,
+    FSInputFile,
+    InputMediaPhoto,
+    InputMediaVideo,
+)
 
 from bot.services.instagram_dl import download_instagram_media
 from bot.utils.helpers import cleanup_files
+from bot.config import MAX_FILE_SIZE
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -28,8 +34,6 @@ async def handle_instagram_link(message: Message):
             return
 
         files = result.get("files", [])
-        title = result.get("title", "Instagram")
-
         if not files:
             await message.answer("❌ Не удалось найти медиафайлы")
             return
@@ -40,7 +44,7 @@ async def handle_instagram_link(message: Message):
 
             file_size = os.path.getsize(filepath)
 
-            if file_size > 50 * 1024 * 1024:
+            if file_size > MAX_FILE_SIZE:
                 await message.answer(
                     f"📎 Файл слишком большой ({file_size // (1024 * 1024)}MB)\n"
                     f"Скачать: {filepath}"
@@ -48,19 +52,19 @@ async def handle_instagram_link(message: Message):
             else:
                 if filepath.endswith((".jpg", ".jpeg", ".png")):
                     await message.answer_photo(
-                        photo=open(filepath, "rb"), caption="✅ Загружено"
+                        photo=FSInputFile(filepath), caption="✅ Загружено"
                     )
                 else:
                     await message.answer_video(
-                        video=open(filepath, "rb"), caption="✅ Загружено"
+                        video=FSInputFile(filepath), caption="✅ Загружено"
                     )
         else:
             media_group = []
             for f in files:
                 if f.endswith((".jpg", ".jpeg", ".png")):
-                    media_group.append({"type": "photo", "media": open(f, "rb")})
+                    media_group.append(InputMediaPhoto(media=FSInputFile(f)))
                 else:
-                    media_group.append({"type": "video", "media": open(f, "rb")})
+                    media_group.append(InputMediaVideo(media=FSInputFile(f)))
 
             await message.answer_media_group(media_group)
 

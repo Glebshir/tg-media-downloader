@@ -9,12 +9,14 @@ from aiogram.types import (
     CallbackQuery,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
+    FSInputFile,
 )
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from bot.services.youtube_dl import get_formats, download_video
 from bot.utils.helpers import is_youtube_url, is_instagram_url, cleanup_files
+from bot.config import MAX_FILE_SIZE
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -57,6 +59,7 @@ async def handle_youtube_link(message: Message, state: FSMContext):
             reply_markup=keyboard,
         )
         await state.set_state(YouTubeStates.waiting_for_quality)
+        await state.update_data(url=url)
 
     except Exception as e:
         logger.error(f"YouTube error: {e}")
@@ -69,7 +72,13 @@ async def process_youtube_callback(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer("⏬ Скачиваю видео...")
 
     format_id = callback.data.replace("yt_", "")
-    url = callback.message.text.split("\n")[0].replace("📹 <b>", "").replace("</b>", "")
+    state_data = await state.get_data()
+    url = state_data.get("url")
+
+    if not url:
+        await callback.message.answer("❌ Не удалось получить ссылку на видео")
+        await callback.answer()
+        return
 
     try:
         filepath = await download_video(url, format_id)
@@ -82,17 +91,18 @@ async def process_youtube_callback(callback: CallbackQuery, state: FSMContext):
 
         file_size = os.path.getsize(filepath)
 
-        if file_size > 50 * 1024 * 1024:
+        if file_size > MAX_FILE_SIZE:
             await callback.message.answer(
                 f"📎 Файл слишком большой ({file_size // (1024 * 1024)}MB)\n"
                 f"Скачать можно по ссылке: {filepath}"
             )
         else:
             await callback.message.answer_video(
-                video=open(filepath, "rb"), caption="✅ Видео загружено"
+                video=FSInputFile(filepath), caption="✅ Видео загружено"
             )
 
         cleanup_files(filepath)
+        await state.clear()
 
     except Exception as e:
         logger.error(f"YouTube download error: {e}")

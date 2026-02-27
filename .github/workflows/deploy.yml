@@ -49,11 +49,13 @@ jobs:
   notify-coolify:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: vars.COOLIFY_WEBHOOK != ''
     
     steps:
       - name: Trigger Coolify redeploy
+        if: ${{ secrets.COOLIFY_WEBHOOK != '' }}
+        env:
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
         run: |
-          curl -X POST "${{ vars.COOLIFY_WEBHOOK }}" \
+          curl -X POST "$COOLIFY_WEBHOOK" \
             -H "Content-Type: application/json" \
             -d '{"event":"deploy"}'
