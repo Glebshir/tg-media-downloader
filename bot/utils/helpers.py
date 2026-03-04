@@ -1,7 +1,7 @@
 import re
 import os
 import glob
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from typing import Optional
 
 
@@ -51,6 +51,45 @@ def extract_instagram_url(text: str) -> Optional[str]:
     if host in INSTAGRAM_HOSTS:
         return url
     return None
+
+
+def youtube_cache_key(url: str) -> str:
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+    path = parsed.path.strip("/")
+
+    video_id = None
+    if host == "youtu.be" and path:
+        video_id = path.split("/")[0]
+    elif host in YOUTUBE_HOSTS:
+        if path == "watch":
+            video_id = parse_qs(parsed.query).get("v", [None])[0]
+        else:
+            parts = path.split("/")
+            if parts and parts[0] in {"shorts", "embed", "live"} and len(parts) > 1:
+                video_id = parts[1]
+
+    if video_id:
+        return f"yt:{video_id}"
+
+    normalized = f"{parsed.scheme}://{host}/{path}".rstrip("/")
+    return f"yt:{normalized}"
+
+
+def instagram_cache_key(url: str) -> str:
+    parsed = urlparse(url)
+    path = parsed.path.strip("/")
+    parts = [p for p in path.split("/") if p]
+
+    if parts:
+        if parts[0] in {"p", "reel", "reels", "tv", "stories"} and len(parts) > 1:
+            return f"ig:{parts[1]}"
+        if len(parts) > 2 and parts[1] in {"p", "reel", "reels", "tv", "stories"}:
+            return f"ig:{parts[2]}"
+
+    host = parsed.netloc.lower()
+    normalized = f"{parsed.scheme}://{host}/{path}".rstrip("/")
+    return f"ig:{normalized}"
 
 
 def cleanup_files(*files):

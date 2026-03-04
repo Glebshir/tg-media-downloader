@@ -15,11 +15,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from bot.services.youtube_dl import get_formats, download_video
-from bot.utils.helpers import extract_youtube_url, cleanup_files
-from bot.config import MAX_FILE_SIZE
+from bot.services.file_id_cache import FileIdCache
+from bot.utils.helpers import extract_youtube_url, cleanup_files, youtube_cache_key
+from bot.config import MAX_FILE_SIZE, FILE_ID_CACHE_SIZE
 
 logger = logging.getLogger(__name__)
 router = Router()
+youtube_file_cache = FileIdCache(max_entries=FILE_ID_CACHE_SIZE)
 
 class YouTubeStates(StatesGroup):
     waiting_for_quality = State()
@@ -30,6 +32,15 @@ async def handle_youtube_link(message: Message, state: FSMContext):
     url = extract_youtube_url(message.text or "")
     if not url:
         return
+
+    cache_key = youtube_cache_key(url)
+    cached_file_id = youtube_file_cache.get(cache_key)
+    if cached_file_id:
+        try:
+            await message.answer_video(video=cached_file_id, caption="✅ Видео из кэша")
+            return
+        except Exception:
+            youtube_file_cache.delete(cache_key)
 
     await message.answer("🔍 Получаю информацию о видео...")
 
@@ -101,9 +112,11 @@ async def process_youtube_callback(callback: CallbackQuery, state: FSMContext):
                 f"Скачать можно по ссылке: {filepath}"
             )
         else:
-            await callback.message.answer_video(
+            sent_message = await callback.message.answer_video(
                 video=FSInputFile(filepath), caption="✅ Видео загружено"
             )
+            if sent_message.video:
+                youtube_file_cache.set(youtube_cache_key(url), sent_message.video.file_id)
 
         cleanup_files(filepath)
         await state.clear()

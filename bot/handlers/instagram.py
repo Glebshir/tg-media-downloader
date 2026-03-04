@@ -12,17 +12,28 @@ from aiogram.types import (
 )
 
 from bot.services.instagram_dl import download_instagram_media
-from bot.utils.helpers import extract_instagram_url, cleanup_files
-from bot.config import MAX_FILE_SIZE
+from bot.services.file_id_cache import FileIdCache
+from bot.utils.helpers import extract_instagram_url, cleanup_files, instagram_cache_key
+from bot.config import MAX_FILE_SIZE, FILE_ID_CACHE_SIZE
 
 logger = logging.getLogger(__name__)
 router = Router()
+instagram_file_cache = FileIdCache(max_entries=FILE_ID_CACHE_SIZE)
 
 @router.message(F.text.func(lambda text: bool(extract_instagram_url(text))))
 async def handle_instagram_link(message: Message):
     url = extract_instagram_url(message.text or "")
     if not url:
         return
+
+    cache_key = instagram_cache_key(url)
+    cached_file_id = instagram_file_cache.get(cache_key)
+    if cached_file_id:
+        try:
+            await message.answer_video(video=cached_file_id, caption="✅ Видео из кэша")
+            return
+        except Exception:
+            instagram_file_cache.delete(cache_key)
 
     await message.answer("⏬ Скачиваю из Instagram...")
 
@@ -32,6 +43,19 @@ async def handle_instagram_link(message: Message):
         if not result:
             await message.answer("❌ Не удалось скачать контент")
             return
+        if result.get("direct_url"):
+            try:
+                sent_message = await message.answer_video(
+                    video=result["direct_url"], caption="✅ Загружено"
+                )
+                if sent_message.video:
+                    instagram_file_cache.set(cache_key, sent_message.video.file_id)
+                return
+            except Exception:
+                result = await download_instagram_media(url, use_preflight=False)
+                if not result:
+                    await message.answer("❌ Не удалось скачать контент")
+                    return
         if result.get("error"):
             error_text = result.get("error", "").lower()
             if "login required" in error_text or "rate-limit" in error_text:
@@ -65,9 +89,11 @@ async def handle_instagram_link(message: Message):
                         photo=FSInputFile(filepath), caption="✅ Загружено"
                     )
                 else:
-                    await message.answer_video(
+                    sent_message = await message.answer_video(
                         video=FSInputFile(filepath), caption="✅ Загружено"
                     )
+                    if sent_message.video:
+                        instagram_file_cache.set(cache_key, sent_message.video.file_id)
         else:
             media_group = []
             for f in files:
